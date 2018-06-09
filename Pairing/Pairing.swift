@@ -1,21 +1,98 @@
 
-/// Wrapping types for the map function.
-public enum Wrapping {
-	/// Doesn't wrap at all.
-	///
-	/// When used the resulting array will be one
-	/// element shorter than the input array.
-	case none
+public struct PairedSequence<Collection: BidirectionalCollection> {
 
-	/// Duplicates the last element as the first.
-	case lastElementFirst
+	private let collection: Collection
+	private let wrapping: Wrapping
 
-	/// Duplicates the first element as the last.
-	case firstElementLast
+	fileprivate init(collection: Collection, wrapping: Wrapping) {
+		self.collection = collection
+		self.wrapping = wrapping
+	}
+}
+
+extension PairedSequence {
+
+	/// Wrapping types for the map function.
+	public enum Wrapping {
+		/// Doesn't wrap at all.
+		///
+		/// When used the resulting array will be one
+		/// element shorter than the input array.
+		case none
+
+		/// Duplicates the last element as the first.
+		case lastElementFirst
+
+		/// Duplicates the first element as the last.
+		case firstElementLast
+	}
+}
+
+extension PairedSequence {
+
+	public struct Iterator {
+
+		private let wrapping: Wrapping
+		private let first: Collection.Element?
+		private let last: Collection.Element?
+		private var zippedIterator: Zip2Sequence<Collection, Collection.SubSequence>.Iterator
+		private var isInitialFirstIteration = true
+		private var isInitialLastIteration = true
+
+		fileprivate init(collection: Collection, wrapping: Wrapping) {
+			self.wrapping = wrapping
+			zippedIterator = zip(collection, collection.dropFirst()).makeIterator()
+
+			guard collection.count > 1 else {
+				first = nil
+				last = nil
+				return
+			}
+
+			first = collection.first
+			last = collection.last
+		}
+	}
+}
+
+extension PairedSequence: Sequence {
+
+	public func makeIterator() -> PairedSequence<Collection>.Iterator {
+		return Iterator(collection: collection, wrapping: wrapping)
+	}
+}
+
+extension PairedSequence.Iterator: IteratorProtocol {
+
+	public mutating func next() -> (Collection.Element, Collection.Element)? {
+
+		guard
+			let first = first,
+			let last = last
+		else {
+			return nil
+		}
+
+		if wrapping == .lastElementFirst && isInitialFirstIteration {
+
+			isInitialFirstIteration = false
+			return (last, first)
+
+		} else if let next = zippedIterator.next() {
+
+			return next
+
+		} else if wrapping == .firstElementLast && isInitialLastIteration {
+
+			isInitialLastIteration = false
+			return (last, first)
+		}
+
+		return nil
+	}
 }
 
 extension BidirectionalCollection {
-
 
 	/// Provides an array of paired elements.
 	///
@@ -35,49 +112,8 @@ extension BidirectionalCollection {
 	/// duplicates the first element into the last pairing.
 	///
 	/// - Parameter wrapping: The wrapping option to use.
-	/// - Returns: An array of tuples of paired elements from the receiver.
-	func paired(with wrapping: Wrapping = .none) -> AnySequence<(Element, Element)> {
-
-		// There needs to be more than 1 element
-		// to create one pair.
-		guard
-			count > 1,
-			let first = first,
-			let last = last
-		else {
-			return AnySequence { AnyIterator { nil } }
-		}
-
-		var zippedIterator = zip(self, dropFirst()).makeIterator()
-		var isInitialFirstIteration = true
-		var isInitialLastIteration = true
-
-		// Replace AnySequence with custom struct that conforms to sequence
-		// makeIterator
-		// Custom Iterator
-		//
-
-		return AnySequence {
-
-			return AnyIterator {
-
-				if wrapping == .lastElementFirst && isInitialFirstIteration {
-
-					isInitialFirstIteration = false
-					return (last, first)
-
-				} else if let next = zippedIterator.next() {
-
-					return next
-
-				} else if wrapping == .firstElementLast && isInitialLastIteration {
-
-					isInitialLastIteration = false
-					return (last, first)
-				}
-
-				return nil
-			}
-		}
+	/// - Returns: A sequence of tuples containing paired elements from the receiver.
+	func paired(with wrapping: PairedSequence<Self>.Wrapping = .none) -> PairedSequence<Self> {
+		return PairedSequence(collection: self, wrapping: wrapping)
 	}
 }
