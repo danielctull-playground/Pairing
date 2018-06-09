@@ -1,20 +1,21 @@
 
-extension Array {
+/// Wrapping types for the map function.
+public enum Wrapping {
+	/// Doesn't wrap at all.
+	///
+	/// When used the resulting array will be one
+	/// element shorter than the input array.
+	case none
 
-	/// Wrapping types for the map function.
-	enum Wrapping {
-		/// Doesn't wrap at all.
-		///
-		/// When used the resulting array will be one
-		/// element shorter than the input array.
-		case none
+	/// Duplicates the last element as the first.
+	case lastElementFirst
 
-		/// Duplicates the last element as the first.
-		case lastElementFirst
+	/// Duplicates the first element as the last.
+	case firstElementLast
+}
 
-		/// Duplicates the first element as the last.
-		case firstElementLast
-	}
+extension BidirectionalCollection {
+
 
 	/// Provides an array of paired elements.
 	///
@@ -35,40 +36,48 @@ extension Array {
 	///
 	/// - Parameter wrapping: The wrapping option to use.
 	/// - Returns: An array of tuples of paired elements from the receiver.
-	func paired(with wrapping: Wrapping = .none) -> [(Element, Element)] {
+	func paired(with wrapping: Wrapping = .none) -> AnySequence<(Element, Element)> {
 
 		// There needs to be more than 1 element
 		// to create one pair.
-		guard count > 1 else {
-			return []
+		guard
+			count > 1,
+			let first = first,
+			let last = last
+		else {
+			return AnySequence { AnyIterator { nil } }
 		}
 
-		var previous: Element
-		var elements: [Element] = self
+		var zippedIterator = zip(self, dropFirst()).makeIterator()
+		var isInitialFirstIteration = true
+		var isInitialLastIteration = true
 
-		switch wrapping {
+		// Replace AnySequence with custom struct that conforms to sequence
+		// makeIterator
+		// Custom Iterator
+		//
 
-			case .none:
+		return AnySequence {
 
-				let initial = elements.removeFirst()
-				previous = initial
+			return AnyIterator {
 
-			case .firstElementLast:
+				if wrapping == .lastElementFirst && isInitialFirstIteration {
 
-				let initial = elements.removeFirst()
-				elements.append(initial)
-				previous = initial
+					isInitialFirstIteration = false
+					return (last, first)
 
-			case .lastElementFirst:
+				} else if let next = zippedIterator.next() {
 
-				// This is fine, already tested for more than 1 element.
-				previous = last!
-		}
+					return next
 
-		return elements.map { next in
-			let pair = (previous, next)
-			previous = next
-			return pair
+				} else if wrapping == .firstElementLast && isInitialLastIteration {
+
+					isInitialLastIteration = false
+					return (last, first)
+				}
+
+				return nil
+			}
 		}
 	}
 }

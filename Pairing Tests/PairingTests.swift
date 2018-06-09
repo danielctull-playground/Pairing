@@ -8,7 +8,7 @@ final class PairingTests: XCTestCase {
 
 		let array = [1, 2, 3]
 
-		let result = array.paired(with: .none)
+		let result = Array(array.paired(with: .none))
 
 		XCTAssertEqual(result.count, 2)
 		XCTAssertEqual(result[0].0, 1)
@@ -21,7 +21,7 @@ final class PairingTests: XCTestCase {
 
 		let array = [1, 2, 3]
 
-		let result = array.paired(with: .lastElementFirst)
+		let result = Array(array.paired(with: .lastElementFirst))
 
 		XCTAssertEqual(result.count, 3)
 		XCTAssertEqual(result[0].0, 3)
@@ -36,7 +36,7 @@ final class PairingTests: XCTestCase {
 
 		let array = [1, 2, 3]
 
-		let result = array.paired(with: .firstElementLast)
+		let result = Array(array.paired(with: .firstElementLast))
 
 		XCTAssertEqual(result.count, 3)
 		XCTAssertEqual(result[0].0, 1)
@@ -51,39 +51,48 @@ final class PairingTests: XCTestCase {
 
 	func testMapNoneEmpty() {
 		let array: [Int] = []
-		let result = array.paired(with: .none)
+		let result = Array(array.paired(with: .none))
 		XCTAssertEqual(result.count, 0)
 	}
 
 	func testMapLastElementFirstEmpty() {
 		let array: [Int] = []
-		let result = array.paired(with: .lastElementFirst)
+		let result = Array(array.paired(with: .lastElementFirst))
 		XCTAssertEqual(result.count, 0)
 	}
 
 	func testMapFirstElementLastEmpty() {
 		let array: [Int] = []
-		let result = array.paired(with: .firstElementLast)
+		let result = Array(array.paired(with: .firstElementLast))
 		XCTAssertEqual(result.count, 0)
+	}
+
+	func testStringPaired() {
+		let string = "Ha"
+		let result = Array(string.paired(with: .firstElementLast))
+		XCTAssertEqual(result[0].0, "H")
+		XCTAssertEqual(result[0].1, "a")
+		XCTAssertEqual(result[1].0, "a")
+		XCTAssertEqual(result[1].1, "H")
 	}
 
 	// MARK: One element
 
 	func testMapNoneOneElement() {
 		let array: [Int] = [1]
-		let result = array.paired(with: .none)
+		let result = Array(array.paired(with: .none))
 		XCTAssertEqual(result.count, 0)
 	}
 
 	func testMapLastElementFirstOneElement() {
 		let array: [Int] = [1]
-		let result = array.paired(with: .lastElementFirst)
+		let result = Array(array.paired(with: .lastElementFirst))
 		XCTAssertEqual(result.count, 0)
 	}
 
 	func testMapFirstElementLastOneElement() {
 		let array: [Int] = [1]
-		let result = array.paired(with: .firstElementLast)
+		let result = Array(array.paired(with: .firstElementLast))
 		XCTAssertEqual(result.count, 0)
 	}
 }
